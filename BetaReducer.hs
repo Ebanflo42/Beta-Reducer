@@ -17,27 +17,18 @@ findClosingParens n ('(':str) = 1 + findClosingParens (n + 1) str
 findClosingParens n (')':str) = 1 + findClosingParens (n - 1) str
 findClosingParens n (c:str)   = 1 + findClosingParens n str
 
-{-
-extract :: String -> String
-extract str = case elemIndex '(' str of
-    Nothing -> str
-    Just n  -> let closing = findClosingParens 0 (drop n str) in
-        drop (n + 1) (take (closing - 1) str)
-        -}
-
 extract :: Int -> String -> String
-extract closing str = case elemIndex '(' of
+extract closing str = case elemIndex '(' str of
     Nothing -> str
     Just n  -> drop (n + 1) (take (closing -1) str)
 
 betaReduce :: String -> String
-betaReduce str = let index = findClosingParens 0 str - 1; noParens = index == -2
-                     expr1 = if noParens then str else take (index - 1) (tail str) in
-                     if not noParens then 
+betaReduce str = let closing = findClosingParens 0 str - 1 in
+                     if closing /= -2 then let expr1 = extract closing str in
                          if safeHead expr1 == Just '\\' then
                              let dotIndex = unwrap (elemIndex '.' expr1)
                                  var      = take (dotIndex - 1) (tail expr1)
-                                 expr2    = drop (index + 2) str
+                                 expr2    = drop (closing + 2) str
                                  output   = drop (dotIndex + 1) expr1 in
                                  replace var expr2 output
                              else let brFst = betaReduce expr1 in
