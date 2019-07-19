@@ -52,5 +52,5 @@ betaReduce expr =
     Application expr1 expr2 ->
       case betaReduce expr1 of
         Variable x        -> Application (Variable x) $ betaReduce expr2
-        Abstraction v e   -> replaceInstances (v, expr2) expr1
+        Abstraction v e   -> replaceInstances (v, expr2) e
         Application e1 e2 -> Application (Application e1 e2) $ betaReduce expr2
