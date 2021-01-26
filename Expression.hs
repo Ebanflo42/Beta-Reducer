@@ -1,7 +1,9 @@
 module Expression where
 
 import Data.List
-import Data.Maybe
+import Data.String
+
+import Utils
 
 data Expression = Variable String
                 | Abstraction String Expression
@@ -20,23 +22,50 @@ findClosingParens n (')':s) = 1 + findClosingParens (n - 1) s
 findClosingParens n ('(':s) = 1 + findClosingParens (n + 1) s
 findClosingParens n (c:s)   = 1 + findClosingParens n s
 
-{--}
 parse :: String -> Expression
 parse string =
-  case head string of
-    '\\' ->
-      let dotIndex =
-            fromMaybe (error "Parse error. Abstraction without \'.\'.") $ elemIndex '.' string
-          str1     = tail $ take dotIndex string
-          str2     = drop (dotIndex + 1) string
-      in Abstraction str1 (parse str2)
-    '('  ->
-      let closIndex = findClosingParens 0 string
-          str1      = tail $ take closIndex string
-          str2      = init $ drop (closIndex + 3) string
-      in Application (parse str1) (parse str2)
-    _    -> Variable string
---}
+  case elemIndex '(' string of
+    Nothing ->
+      case elemIndex '.' string of
+        Nothing ->
+          case elemIndex ' ' string of
+            Nothing -> Variable string
+            Just i  ->
+              let
+                pre  = take i string
+                post = drop (i + 1) string
+              in
+                Application (Variable pre) (Variable post)
+        Just i  ->
+          let
+            pre  = tail $ take i string
+            post = drop (i + 1) string
+          in
+            Abstraction pre (parse post)
+    Just 0  ->
+      let
+        innerix = findClosingParens 1 (tail string)
+        inner   = take innerix $ tail string
+        outer   = drop (innerix + 2) string
+      in
+        if length outer > 1 then
+          Application (parse inner) (parse $ tail outer)
+        else
+          parse inner
+    Just i  ->
+      case elemIndex '.' string of
+        Nothing ->
+          let
+            pre = take (i - 1) string
+            post = init $ drop (i + 1) string
+          in
+            Application (Variable pre) (parse post)
+        Just i  ->
+          let
+            pre  = tail $ take i string
+            post = drop (i + 1) string
+          in
+            Abstraction pre (parse post)
 
 replaceInstances :: (String, Expression) -> Expression -> Expression
 replaceInstances (str, e) (Variable v)   = if v == str then e else Variable v
